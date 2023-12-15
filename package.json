@@ -1,0 +1,27 @@
+{
+  "name": "gamming_app",
+  "version": "1.0.0",
+  "description": "gamming app web based",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "author": "the proficient tech",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "decimal.js": "^10.4.3",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.10.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "mongoose": "^6.10.0",
+    "node": "^19.6.1",
+    "nodemon": "^2.0.22",
+    "razorpay": "^2.9.2",
+    "request": "^2.88.2",
+    "socket.io": "^4.7.2",
+    "winston": "^3.10.0"
+  }
+}

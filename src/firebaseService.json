@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "950997640126",
+    "project_id": "score11-fe12d",
+    "storage_bucket": "score11-fe12d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:950997640126:android:046f5481ed8d553d26cfef",
+        "android_client_info": {
+          "package_name": "com.proficient.scoreEleven"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "950997640126-17toqv3e9011tbk0vmnbj4rjft52qcve.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proficient.scoreEleven",
+            "certificate_hash": "8b4c234cf4197f0c02d352c043be2a679d6442cd"
+          }
+        },
+        {
+          "client_id": "950997640126-9tqvo5u7470noij6iud4p9fhkrun8kva.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proficient.scoreEleven",
+            "certificate_hash": "e0f9eeab0c597646f5a8b6305b269f4992cdd1c8"
+          }
+        },
+        {
+          "client_id": "950997640126-klto3k0i8qenr0bf84rbkp6boakpcehc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2qoMLPd-b5sAeJEgoRVBpCh32y1w20lw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "950997640126-klto3k0i8qenr0bf84rbkp6boakpcehc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
