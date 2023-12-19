@@ -40,10 +40,10 @@ const createUsers = async function (req, res) {
           "Body should  not be Empty please enter some data to create user",
       });
     }
-    if(!token){
-      return res.status(400).send({sttaus:false, message:"token is required"});
-    }
-    queryData.token = token ;
+    // if(!token){
+    //   return res.status(400).send({sttaus:false, message:"token is required"});
+    // }
+    // queryData.token = token ;
     let checkUserId = await userModel.findOne({ UserId: UserId }).select({_id:0});
 
     if (checkUserId != null && checkUserId != undefined) {
