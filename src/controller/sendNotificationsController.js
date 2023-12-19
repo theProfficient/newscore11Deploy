@@ -122,54 +122,107 @@
 
 
 //__________________________new_______________
-const request = require('request');
+// const request = require('request');
 
-const sendNotification = async function(req,res){
-try{
+// const sendNotification = async function(req,res){
+// try{
 
-const serverKey = '164306dcf068810b803e0bbe98b061c072acfa33'; // Replace with your server key
-const registrationTokens = ['12344556677']; // Replace with your device tokens
-const payload = {
-  notification: {
-    title: 'This is a Notification',
-    body: 'Welcome to our gaming world',
-  },
-};
+// const serverKey = '164306dcf068810b803e0bbe98b061c072acfa33'; // Replace with your server key
+// const registrationTokens = ['12344556677']; // Replace with your device tokens
+// const payload = {
+//   notification: {
+//     title: 'This is a Notification',
+//     body: 'Welcome to our gaming world',
+//   },
+// };
 
-const options = {
-  priority: 'high',
-  timeToLive: 60 * 60 * 24,
-};
+// const options = {
+//   priority: 'high',
+//   timeToLive: 60 * 60 * 24,
+// };
 
-const headers = {
-  Authorization: 'key=' + serverKey,
-  'Content-Type': 'application/json',
-};
+// const headers = {
+//   Authorization: 'key=' + serverKey,
+//   'Content-Type': 'application/json',
+// };
 
-const body = JSON.stringify({
-  registration_ids: registrationTokens,
-  data: payload,
-  android: options,
+// const body = JSON.stringify({
+//   registration_ids: registrationTokens,
+//   data: payload,
+//   android: options,
+// });
+
+// request.post(
+//   {
+//     url: 'https://fcm.googleapis.com/fcm/send',
+//     headers: headers,
+//     body: body,
+//   },
+//   function (error, response, body) {
+//     if (error) {
+//       console.error('Error sending notification:', error);
+//     } else {
+//       console.log('Notification sent:', body);
+//     }
+//   }
+// );
+// return res.json({ message: "Notification sent successfully" });
+// }catch(error){
+//   console.error("Error sending notification:", error);
+//   res.status(500).json({ error: 'Error sending notification' });
+// }
+// }
+// module.exports = { sendNotification };
+//____________________________________notification using firebase________________________
+
+const admin = require('firebase-admin');
+const userModel = require('../model/userModel');
+const serviceAccount = require('../firebaseService.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'mongodb+srv://theproficienttech333:gzYGYI5pD4oAUvim@cluster0.gp7jlnb.mongodb.net/game'
 });
 
-request.post(
-  {
-    url: 'https://fcm.googleapis.com/fcm/send',
-    headers: headers,
-    body: body,
-  },
-  function (error, response, body) {
-    if (error) {
-      console.error('Error sending notification:', error);
-    } else {
-      console.log('Notification sent:', body);
-    }
+
+// Assume you have an array of registration tokens for multiple users
+// const registrationTokens = ['token1', 'token2', 'token3']; // Replace with your actual tokens
+
+const sendNotification = async function(req, res){
+  try{
+
+    const query = { 
+      token: { 
+        $exists: true,  
+        $ne: ''        
+      }
+    };
+const fetchTokens = await userModel.find(query).select({token:1,_id:0});
+const registrationTokens = fetchTokens.map(tokens => tokens.token);
+console.log(registrationTokens,"====================");
+registrationTokens.forEach((token) => {
+  const message = {
+    data: {
+      title: 'Game Started',
+      body: 'Your game has started!'
+    },
+    token: token,
+  };
+
+  admin.messaging().send(message)
+    .then((response) => {
+      console.log('Successfully sent message:', response);
+    })
+    .catch((error) => {
+      console.error('Error sending message:', error);
+    });
+});
+
+
+  }catch(error){
+    console.log(error);
+    return res.status(500).send({status:false, message:error.message});
   }
-);
-return res.json({ message: "Notification sent successfully" });
-}catch(error){
-  console.error("Error sending notification:", error);
-  res.status(500).json({ error: 'Error sending notification' });
 }
-}
-module.exports = { sendNotification };
+
+module.exports = {sendNotification};

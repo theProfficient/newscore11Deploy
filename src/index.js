@@ -25,7 +25,8 @@ mongoose.set("strictQuery", false);
   // const mongooseConnectionString = process.env.mongooseConnectionString;
 //________________________for local test____________________________________
 const mongooseConnectionString =
-  "mongodb+srv://nikita1:7CSKh9nBmgBm27YC@cluster0.suzof1p.mongodb.net/nikita";
+// "mongodb+srv://theproficienttech333:gzYGYI5pD4oAUvim@cluster0.gp7jlnb.mongodb.net/game"
+ "mongodb+srv://nikita1:7CSKh9nBmgBm27YC@cluster0.suzof1p.mongodb.net/nikita";
 
 mongoose
   .connect(mongooseConnectionString, {

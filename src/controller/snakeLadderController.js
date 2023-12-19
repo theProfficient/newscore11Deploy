@@ -3,7 +3,7 @@ const userModel = require("../model/userModel");
 const snkTournamentModel = require("../model/snkTournamentModel");
 const groupModelForSnakeLadder = require("../model/groupModelForSnakeLadder");
 const snakeLadderModel = require("../model/snakeLadderModel");
-const Decimal = require('decimal.js');
+const Decimal = require("decimal.js");
 
 const {
   startMatch,
@@ -42,10 +42,10 @@ const snkTablesCreatedByAdmin = async function (req, res) {
     req.body.entryFee = entryFee;
     let tableByAdmin1I = await snkTournamentModel.create(req.body);
     let tableId1 = tableByAdmin1I._id;
-    console.log(tableByAdmin1I,"==========table for snk");
+    console.log(tableByAdmin1I, "==========table for snk");
     setTimeout(function () {
       createGroupForSnakeLadder(tableId1);
-      console.log(tableByAdmin1I,"==========table for snk after setTimeOut");
+      console.log(tableByAdmin1I, "==========table for snk after setTimeOut");
     }, maxTime + 60 * 1000);
 
     return res.status(201).send({
@@ -301,7 +301,7 @@ const updateSnakLdrTournaments = async function (req, res) {
     let updateData = req.query;
     let { status } = updateData;
 
-    console.log(req.query.UserId,"______________req.query.UserId");
+    console.log(req.query.UserId, "______________req.query.UserId");
 
     if (Object.keys(updateData).length == 0) {
       return res.status(400).send({
@@ -341,15 +341,18 @@ const updateSnakLdrTournaments = async function (req, res) {
 
     //________________________________find user,s Name _____________________________________
 
-    let userExist = await userModel.findOne({ UserId: UserId, isDeleted:false });
+    let userExist = await userModel.findOne({
+      UserId: UserId,
+      isDeleted: false,
+    });
     if (!userExist) {
       return res.status(404).send({
         status: false,
         message: " user not found",
       });
     }
-    const { userName, isBot, credits } = userExist;
-
+    let { userName, isBot, credits, realMoney } = userExist;
+    credits = credits + parseInt(realMoney);
     if (credits < entryFee) {
       return res.status(404).send({
         status: false,
@@ -412,22 +415,66 @@ const updateSnakLdrTournaments = async function (req, res) {
       .select({ players: 1, _id: 0 });
 
     //_______store user's tournament history in user profile
-
+    let userHistory;
     let time = existTable.createdAt;
-    let userHistory = await userModel.findOneAndUpdate(
-      { UserId: UserId },
-      {
-        $push: {
-          history: { gameType: "snakeLadder", tableId: tableId, time: time, result:"", win:0 },
-          transactionHistory:{date:new Date(), amount:entryFee, type:"Entry Fee",gameType:"snakeLadder"}
+    if (userExist.credits >= entryFee) {
+      userHistory = await userModel.findOneAndUpdate(
+        { UserId: UserId },
+        {
+          $push: {
+            history: {
+              gameType: "snakeLadder",
+              tableId: tableId,
+              time: time,
+              result: "",
+              win: 0,
+            },
+            transactionHistory: {
+              date: new Date(),
+              amount: entryFee,
+              type: "Entry Fee",
+              gameType: "snakeLadder",
+            },
+          },
+          $inc: {
+            credits: -entryFee,
+            "snkLadderData.0.playCount": 1, // Increment playCount by 1
+          },
         },
-        $inc: {
-          credits: -entryFee, "snkLadderData.0.playCount": 1 // Increment playCount by 1
+        { new: true }
+      );
+    } else {
+      // Insufficient credits, deduct from realMoney
+      const remainingAmount = entryFee - userExist.credits;
+      userHistory = await userModel.findOneAndUpdate(
+        { UserId: UserId },
+        {
+          $push: {
+            history: {
+              gameType: "snakeLadder",
+              tableId: tableId,
+              time: time,
+              result: "",
+              win: 0,
+            },
+            transactionHistory: {
+              date: new Date(),
+              amount: entryFee,
+              type: "Entry Fee",
+              gameType: "snakeLadder",
+            },
+          },
+          $inc: {
+            realMoney: -remainingAmount,
+            "snkLadderData.0.playCount": 1, // Increment playCount by 1
+          },
+          $set: {
+            credits: 0,
+          },
         },
-        
-      },
-      { new: true }
-    );
+        { new: true }
+      );
+    }
     // console.log("users data after deduct the credit >>>>>>>>>>>>>",userHistory)
     return res.status(200).send({
       status: true,
@@ -616,7 +663,7 @@ const getGroupsByUser = async function (req, res) {
 //           await userModel.findOneAndUpdate(
 //             { UserId: player.UserId, "history.tableId":tableId },
 //             { $inc: { realMoney: player.prize,
-//                       snkLadderWinAmount:player.prize 
+//                       snkLadderWinAmount:player.prize
 //                     },
 //                $set: { "history.$.result": "lose","history.$.win": player.prize } },
 //             { new: true }
@@ -646,7 +693,7 @@ const getGroupsByUser = async function (req, res) {
 //                     snkLadderWinAmount:potentialWinnerPrizeDecimal.toNumber(),
 //                    "snkLadderData.0.winCount": 1 },   // Increment playCount by 1,
 //             $set: { "history.$.result": "win","history.$.win":potentialWinnerPrizeDecimal.toNumber() }
-//           }, 
+//           },
 //           { new: true }
 //         );
 
@@ -655,7 +702,7 @@ const getGroupsByUser = async function (req, res) {
 //           { UserId: runner.UserId, "history.tableId":tableId },
 //           {
 //             $set: { "history.$.result": "lose" }
-//           }, 
+//           },
 //           { new: true }
 //         );
 //       }
@@ -932,7 +979,6 @@ const getGroupsByUser = async function (req, res) {
 //   }
 // };
 
-
 //____________________testing code_______________________
 
 const getSnkByGroupId = async function (req, res) {
@@ -986,20 +1032,20 @@ const getSnkByGroupId = async function (req, res) {
       return res.status(200).json(result);
     }
     //_________________________winner declare_____________
-    if(snakeLadder.isGameOver){
-     let result = {
-    currentTurn: "game is over",
-    currentTime: new Date(),
-    nextTurnTime: new Date(),
-    tableId: snakeLadder.tableId,
-    updatedPlayers: snakeLadder.updatedPlayers,
-    isGameOver: snakeLadder.isGameOver,
-    isGameStart: snakeLadder.isGameStart,
-    gameEndTime: snakeLadder.gameEndTime,
-  };
-  console.log(result.updatedPlayers, "when winner is declared");
-  return res.status(200).json(result);
-}
+    if (snakeLadder.isGameOver) {
+      let result = {
+        currentTurn: "game is over",
+        currentTime: new Date(),
+        nextTurnTime: new Date(),
+        tableId: snakeLadder.tableId,
+        updatedPlayers: snakeLadder.updatedPlayers,
+        isGameOver: snakeLadder.isGameOver,
+        isGameStart: snakeLadder.isGameStart,
+        gameEndTime: snakeLadder.gameEndTime,
+      };
+      console.log(result.updatedPlayers, "when winner is declared");
+      return res.status(200).json(result);
+    }
     //_________________update points for bot User________________________________
 
     // let botPlayer = updatedPlayers.find(
@@ -1013,7 +1059,7 @@ const getSnkByGroupId = async function (req, res) {
     //   );
     //   const nextUserIndex = (currentUserIndex + 1) % updatedPlayers.length;
     //   const nextUserId = updatedPlayers[nextUserIndex].UserId;
-      
+
     //   let result = {
     //     currentTurn: nextUserId,
     //     currentTime: new Date(),
@@ -1024,40 +1070,39 @@ const getSnkByGroupId = async function (req, res) {
     //     isGameStart: snakeLadder.isGameStart,
     //     gameEndTime: snakeLadder.gameEndTime,
     //   };
-    
+
     //   return res.status(200).json(result);
     // }
 
     //___________Check if it's time to switch turn to next user
 
-      if (crntPlayer === undefined || crntPlayer === null || !crntPlayer) {
-        let result = {
-          currentTurn: "wait for the turn",
-          currentTime: new Date(),
-          nextTurnTime: snakeLadder.nextTurnTime,
-          tableId: snakeLadder.tableId,
-          updatedPlayers: snakeLadder.updatedPlayers,
-          isGameOver: snakeLadder.isGameOver,
-          isGameStart: snakeLadder.isGameStart,
-          gameEndTime: snakeLadder.gameEndTime,
-        };
-        console.log("Wait for the turn");
-        return res.status(200).json(result);
-      } else {
-        let result = {
-          currentTurn: crntPlayer.UserId,
-          currentTime: new Date(),
-          nextTurnTime: snakeLadder.nextTurnTime,
-          tableId: snakeLadder.tableId,
-          updatedPlayers: snakeLadder.updatedPlayers,
-          isGameOver: snakeLadder.isGameOver,
-          isGameStart: snakeLadder.isGameStart,
-          gameEndTime: snakeLadder.gameEndTime,
-        };
-        console.log("dicepoints and position of player", result.updatedPlayers);
-        return res.status(200).json(result);
-      }
-    
+    if (crntPlayer === undefined || crntPlayer === null || !crntPlayer) {
+      let result = {
+        currentTurn: "wait for the turn",
+        currentTime: new Date(),
+        nextTurnTime: snakeLadder.nextTurnTime,
+        tableId: snakeLadder.tableId,
+        updatedPlayers: snakeLadder.updatedPlayers,
+        isGameOver: snakeLadder.isGameOver,
+        isGameStart: snakeLadder.isGameStart,
+        gameEndTime: snakeLadder.gameEndTime,
+      };
+      console.log("Wait for the turn");
+      return res.status(200).json(result);
+    } else {
+      let result = {
+        currentTurn: crntPlayer.UserId,
+        currentTime: new Date(),
+        nextTurnTime: snakeLadder.nextTurnTime,
+        tableId: snakeLadder.tableId,
+        updatedPlayers: snakeLadder.updatedPlayers,
+        isGameOver: snakeLadder.isGameOver,
+        isGameStart: snakeLadder.isGameStart,
+        gameEndTime: snakeLadder.gameEndTime,
+      };
+      console.log("dicepoints and position of player", result.updatedPlayers);
+      return res.status(200).json(result);
+    }
   } catch (err) {
     return res.status(500).send({
       status: false,
@@ -1135,19 +1180,18 @@ const updatePointOfUser = async function (req, res) {
     const snakeLadderAndTunnel = {
       2: 21, //--------------ladder .
       8: 29, //--------------ladder.
-      14: 7,//--------------snake
+      14: 7, //--------------snake
       19: 38, //--------------ladder.
-      25: 46,//--------------ladder.
+      25: 46, //--------------ladder.
       36: 3, //--------------snake
       41: 83, //--------------ladder.
       48: 12, //--------------snake
-      49: 71,//--------------ladder.
+      49: 71, //--------------ladder.
       58: 22, //--------------snake
       72: 47, //--------------snake
       74: 93, //--------------ladder.
       95: 13, //--------------snake
       97: 78, //--------------snake
-    
     };
 
     if (newPosition in snakeLadderAndTunnel) {
@@ -1162,12 +1206,12 @@ const updatePointOfUser = async function (req, res) {
         newPosition === 49 ||
         newPosition === 74
           ? "Ladder"
-          // : newPosition === 4 ||
-          //   newPosition === 22 ||
-          //   newPosition === 37 ||
-          //   newPosition === 60
-          // ? "Tunnel"
-          : "Snake";
+          : // : newPosition === 4 ||
+            //   newPosition === 22 ||
+            //   newPosition === 37 ||
+            //   newPosition === 60
+            // ? "Tunnel"
+            "Snake";
     } else {
       updatedPlayers[currentUserIndex].points = newPosition;
       updatedPlayers[currentUserIndex].movement = "";
@@ -1213,12 +1257,12 @@ const updatePointOfUser = async function (req, res) {
 
     if (
       newPosition === 2 ||
-        newPosition === 8 ||
-        newPosition === 19 ||
-        newPosition === 25 ||
-        newPosition === 41 ||
-        newPosition === 49 ||
-        newPosition === 74
+      newPosition === 8 ||
+      newPosition === 19 ||
+      newPosition === 25 ||
+      newPosition === 41 ||
+      newPosition === 49 ||
+      newPosition === 74
     ) {
       let result = {
         nextTurn: nextUserId,
@@ -1303,7 +1347,9 @@ const getPlayersOfSnkLadder = async function (req, res) {
 
 const getAllGroupsOfSnk = async function (req, res) {
   try {
-    let groupsData = await groupModelForSnakeLadder.find().sort({createdTime:-1});
+    let groupsData = await groupModelForSnakeLadder
+      .find()
+      .sort({ createdTime: -1 });
 
     if (groupsData.length === 0) {
       return res.status(404).send({

@@ -488,7 +488,9 @@ const updateTournament = async function (req, res) {
         message: " user not found",
       });
     }
-    const { userName, isBot, credits } = userExist;
+    let { userName, isBot, credits, realMoney } = userExist;
+
+    credits = credits + parseInt(realMoney) ;
 
     if (credits < entryFee) {
       return res.status(404).send({
@@ -558,33 +560,96 @@ const updateTournament = async function (req, res) {
     //_______store user's tournament history in user profile
 
     let time = existTable.createdAt;
-    let userHistory = await userModel.findOneAndUpdate(
-      { UserId: UserId },
-      {
-        $push: {
-          history: {
-            gameType: "cricket",
-            tableId: tableId,
-            time: time,
-            result: "",
-            win: 0,
-          },
-          transactionHistory: {
-            date: new Date(),
-            amount: entryFee,
-            type: "Entry Fee",
-            gameType: "cricket",
-          },
-        },
-        $inc: {
-          credits: -entryFee,
-          "cricketData.0.playCount": 1,
-        },
-        // $inc: {  } // Increment playCount by 1
-      },
-      { new: true }
-    );
+    // let userHistory = await userModel.findOneAndUpdate(
+    //   { UserId: UserId },
+    //   {
+    //     $push: {
+    //       history: {
+    //         gameType: "cricket",
+    //         tableId: tableId,
+    //         time: time,
+    //         result: "",
+    //         win: 0,
+    //       },
+    //       transactionHistory: {
+    //         date: new Date(),
+    //         amount: entryFee,
+    //         type: "Entry Fee",
+    //         gameType: "cricket",
+    //       },
+    //     },
+    //     $inc: {
+    //       credits: -entryFee,
+    //       "cricketData.0.playCount": 1,
+    //     },
+    //     // $inc: {  } // Increment playCount by 1
+    //   },
+    //   { new: true }
+    // );
     // console.log("users data after deduct the credit >>>>>>>>>>>>>",userHistory)
+    let userHistory ;
+    if (userExist.credits >= entryFee) {
+      // Sufficient credits, deduct from credits
+      userHistory = await userModel.findOneAndUpdate(
+        { UserId: UserId },
+        {
+          $push: {
+            history: {
+              gameType: "cricket",
+              tableId: tableId,
+              time: time,
+              result: "",
+              win: 0,
+            },
+            transactionHistory: {
+              date: new Date(),
+              amount: entryFee,
+              type: "Entry Fee",
+              gameType: "cricket",
+            },
+          },
+          $inc: {
+            credits: -entryFee,
+            "cricketData.0.playCount": 1,
+          },
+          // $inc: {  } // Increment playCount by 1
+        },
+        { new: true }
+      );
+    } else {
+      // Insufficient credits, deduct from realMoney
+      const remainingAmount = entryFee - userExist.credits;
+      userHistory = await userModel.findOneAndUpdate(
+        { UserId: UserId },
+        {
+          $push: {
+            history: {
+              gameType: "cricket",
+              tableId: tableId,
+              time: time,
+              result: "",
+              win: 0,
+            },
+            transactionHistory: [
+              {
+                date: new Date(),
+                amount: entryFee,
+                type: "Entry Fee",
+                gameType: "cricket",
+              },
+            ],
+          },
+          $inc: {
+            realMoney: -remainingAmount,
+            "cricketData.0.playCount": 1,
+          },
+          $set: {
+            credits: 0,
+          },
+        },
+        { new: true }
+      );
+    }
     return res.status(200).send({
       status: true,
       message: "Success",
