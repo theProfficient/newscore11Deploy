@@ -59,4 +59,4 @@ jobs:
           app-name: 'snakeladder1'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BA16E909D1ED4792A0978764CC22A33E }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6640E4E6F4714063AD78E4B59D3445DB }}
