@@ -34,14 +34,14 @@ const createUsers = async function (req, res) {
     } = queryData;
 
     if (Object.keys(queryData).length == 0) {
-      return res.status(400).send({
+      return res.status(200).send({
         status: false,
         message:
           "Body should  not be Empty please enter some data to create user",
       });
     }
     // if(!token){
-    //   return res.status(400).send({sttaus:false, message:"token is required"});
+    //   return res.status(200).send({sttaus:false, message:"token is required"});
     // }
     // queryData.token = token ;
     let checkUserId = await userModel.findOne({ UserId: UserId }).select({_id:0});
@@ -93,14 +93,14 @@ const createUsers = async function (req, res) {
       if (referrer) {
         const isAlredyUsedRefCode = referrer.referralHistory.filter((user) => user.UserId === UserId);
         if(isAlredyUsedRefCode.length !== 0){
-          return res.status(400).send({status:false, message:"You already used this referral code"});
+          return res.status(200).send({status:false, message:"You already used this referral code"});
         }
         referrer.credits += parseInt(referrer.referralAmount);
         referrer.referralHistory.push({referTo:UserId, date:new Date()});
         await referrer.save();
         queryData.referredBy = referrer.UserId ;
       } else {
-        return res.status(400).json({ error: "Invalid referral code" });
+        return res.status(200).json({ error: "Invalid referral code" });
       }
     }
 
@@ -181,7 +181,7 @@ const getUser = async function (req, res) {
     const getNewUser = await userModel.findOne({ UserId: UserId, isDeleted:false }).select({_id:0});
 
     if (!getNewUser) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "user not found",
       });
@@ -265,7 +265,7 @@ const getAllUser = async function (req, res) {
     const getUsers = await userModel.find({isDeleted:false}).sort({createdAt:-1});;
 
     if (getUsers.length == 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "user not found",
       });
@@ -293,7 +293,7 @@ const updateUser = async function (req, res) {
     console.log(updateData, "========updateData");
 
     if (Object.keys(updateData).length == 0) {
-      return res.status(400).send({
+      return res.status(200).send({
         status: false,
         message: "For updating please enter atleast one field",
       });
@@ -302,7 +302,7 @@ const updateUser = async function (req, res) {
 
     if (!checkUser) {
       return res
-        .status(404)
+        .status(200)
         .send({ atatus: false, message: "UserId is not present" });
     }
     if (banned === "false") {
@@ -339,14 +339,14 @@ const updateUser = async function (req, res) {
     );
 
     if (userUpdate.length == 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "user not found",
       });
     }
 
     if (userUpdate.length == UserId) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "you can't update UserId",
       });
@@ -427,7 +427,7 @@ const leadderBoard = async function (req, res) {
       .limit(100);
 
       if (leaderBoardData.length === 0) {
-        return res.status(404).send({ status: false, message: "Data not found" });
+        return res.status(200).send({ status: false, message: "Data not found" });
       }
   
     // Modify the leaderBoardData to include only playCount and winCount
@@ -486,7 +486,7 @@ const userHistory = async function (req, res) {
 
     if (!UserId) {
       return res
-        .status(400)
+        .status(200)
         .send({ status: false, message: "User id is required" });
     }
     const findUserData = await userModel
@@ -496,7 +496,7 @@ const userHistory = async function (req, res) {
 
     if (!findUserData) {
       return res
-        .status(404)
+        .status(200)
         .send({ status: false, message: "Data not found for this UserId" });
     }
 
@@ -522,14 +522,14 @@ const transactionHistory = async function (req, res) {
     const UserId = req.query.UserId;
     if (!UserId) {
       return res
-        .status(400)
+        .status(200)
         .send({ status: false, message: "User id is required" })
     }
     let findUser = await userModel.findOne({ UserId: UserId, isDeleted:false }).select({ transactionHistory: { $slice: -50 }, _id: 0 })
     .lean();
     if (!findUser) {
       return res
-        .status(404)
+        .status(200)
         .send({ status: false, message: "data not found  as per this UserId" });
     }
     const result = { transactionHistory: findUser.transactionHistory, Bonus:1000 };
@@ -557,7 +557,7 @@ const deleteUserAccount = async function (req, res){
  console.log(UserId,"_____UserId");
  const checkUser = await userModel.findOne({UserId:UserId});
  if(!checkUser || checkUser.isDeleted === true){
-  return res.status(404).send({status:true, message:"user not found "})
+  return res.status(200).send({status:true, message:"user not found "})
  }
 
  const deleteUser = await userModel.findOneAndUpdate({UserId:UserId}, {$set:{isDeleted:true}}, {new:true});

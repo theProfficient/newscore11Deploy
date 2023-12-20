@@ -17,7 +17,7 @@ const getAllCric = async function (req, res) {
 
     if (data.length == 0) {
       return res
-        .status(404)
+        .status(200)
         .send({ status: false, message: " no data is  found " });
     }
     return res.status(200).send({
@@ -42,7 +42,7 @@ const getCricByGroupId = async function (req, res) {
     let cricket = await groupModel.findById({ _id: groupId });
     if (!cricket) {
       return res
-        .status(404)
+        .status(200)
         .send({ status: false, message: "this groupId not found" });
     }
 
@@ -119,7 +119,7 @@ const updateCric = async function (req, res) {
 
     if (!groupExist) {
       console.error("No matching document found");
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "No matching document found",
         data: null,
@@ -128,7 +128,7 @@ const updateCric = async function (req, res) {
     let group = groupExist.updatedPlayers;
     const user = group.find((user) => user.UserId.includes(UserId));
     if (!user) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: true,
         message: "this user is not present in this group",
       });
@@ -143,7 +143,7 @@ const updateCric = async function (req, res) {
 
     if (index === -1) {
       console.error("User not found in the updatedPlayers array");
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "User not found in the updatedPlayers array",
         data: null,
@@ -279,7 +279,7 @@ const winTheGame = async function (req, res) {
     const checkGroup = await groupModel.findById(groupId).lean();
 
     if (!checkGroup) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "this group is not present in DB",
       });
@@ -289,7 +289,7 @@ const winTheGame = async function (req, res) {
 
     const checkTable = await tournamentModel.findById(tableId).lean();
     if (!checkTable) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "this table is not present in DB",
       });
@@ -357,7 +357,7 @@ const getAllGroups = async function(req,res){
 
     const getGroups = await groupModel.find().sort({createdTime:-1});
     if(getGroups.length === 0){
-      return res.status(404).send({status:false, message:"data not found"});
+      return res.status(200).send({status:false, message:"data not found"});
     }
 return res.status(200).json(getGroups);
   }catch(error){

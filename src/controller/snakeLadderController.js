@@ -304,7 +304,7 @@ const updateSnakLdrTournaments = async function (req, res) {
     console.log(req.query.UserId, "______________req.query.UserId");
 
     if (Object.keys(updateData).length == 0) {
-      return res.status(400).send({
+      return res.status(200).send({
         status: false,
         message: "For updating please enter atleast one key",
       });
@@ -312,13 +312,13 @@ const updateSnakLdrTournaments = async function (req, res) {
 
     if (!mongoose.Types.ObjectId.isValid(tableId)) {
       return res
-        .status(400)
+        .status(200)
         .send({ status: false, message: "invalid tableId" });
     }
 
     let existTable = await snkTournamentModel.findById({ _id: tableId });
     if (!existTable) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: " This table is not present ",
       });
@@ -336,7 +336,7 @@ const updateSnakLdrTournaments = async function (req, res) {
       status = "full";
     }
     if (ExistPlayers > maxPlayers - 1) {
-      return res.status(400).send({ status: false, message: " Full " });
+      return res.status(200).send({ status: false, message: " Full " });
     }
 
     //________________________________find user,s Name _____________________________________
@@ -346,7 +346,7 @@ const updateSnakLdrTournaments = async function (req, res) {
       isDeleted: false,
     });
     if (!userExist) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: " user not found",
       });
@@ -354,7 +354,7 @@ const updateSnakLdrTournaments = async function (req, res) {
     let { userName, isBot, credits, realMoney } = userExist;
     credits = credits + parseInt(realMoney);
     if (credits < entryFee) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: " insufficient balance to play",
       });
@@ -384,7 +384,7 @@ const updateSnakLdrTournaments = async function (req, res) {
           "time which he want to join___________"
         );
         if (Math.abs(time.getMinutes() - existTable.endTime.getMinutes()) < 5) {
-          return res.status(400).send({
+          return res.status(200).send({
             status: false,
             message: " You can not join",
           });
@@ -499,7 +499,7 @@ const getGroupsByUser = async function (req, res) {
     let UserId = req.query.UserId;
 
     if (Object.keys(req.query).length <= 1) {
-      return res.status(400).send({
+      return res.status(200).send({
         status: false,
         message: " Please provide both tableId and UserId ",
       });
@@ -507,7 +507,7 @@ const getGroupsByUser = async function (req, res) {
     let userExist = await userModel.findOne({ UserId: UserId });
 
     if (userExist == null) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: " User not found ",
       });
@@ -518,7 +518,7 @@ const getGroupsByUser = async function (req, res) {
     console.log("table>>>>>>>>>>>>>>", table);
 
     if (table.length === 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: " This table is not present ",
       });
@@ -541,7 +541,7 @@ const getGroupsByUser = async function (req, res) {
     }
 
     if (!user) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: true,
         message: "this user is not present in any group",
       });
@@ -573,14 +573,14 @@ const getGroupsByUser = async function (req, res) {
 
 //     if (!mongoose.Types.ObjectId.isValid(groupId)) {
 //       return res
-//         .status(400)
+//         .status(200)
 //         .send({ status: false, message: "invalid groupId" });
 //     }
 //     let snakeLadder = await groupModelForSnakeLadder.findById({ _id: groupId });
 
 //     if (!snakeLadder) {
 //       return res
-//         .status(404)
+//         .status(200)
 //         .send({ status: false, message: "this groupId not found" });
 //     }
 
@@ -598,7 +598,7 @@ const getGroupsByUser = async function (req, res) {
 //       .lean();
 
 //     if (!checkTable) {
-//       return res.status(404).send({
+//       return res.status(200).send({
 //         status: false,
 //         message: "this table is not present in DB",
 //       });
@@ -987,14 +987,14 @@ const getSnkByGroupId = async function (req, res) {
 
     if (!mongoose.Types.ObjectId.isValid(groupId)) {
       return res
-        .status(400)
+        .status(200)
         .send({ status: false, message: "invalid groupId" });
     }
     let snakeLadder = await groupModelForSnakeLadder.findById({ _id: groupId });
 
     if (!snakeLadder) {
       return res
-        .status(404)
+        .status(200)
         .send({ status: false, message: "this groupId not found" });
     }
 
@@ -1012,7 +1012,7 @@ const getSnkByGroupId = async function (req, res) {
       .lean();
 
     if (!checkTable) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "this table is not present in DB",
       });
@@ -1119,14 +1119,14 @@ const updatePointOfUser = async function (req, res) {
     let hit = false;
 
     if (!UserId && !groupId) {
-      return res.status(400).send({
+      return res.status(200).send({
         status: false,
         message: "please provide both groupId and UserId",
       });
     }
     if (!mongoose.Types.ObjectId.isValid(groupId)) {
       return res
-        .status(400)
+        .status(200)
         .send({ status: false, message: "invalid groupId" });
     }
 
@@ -1135,7 +1135,7 @@ const updatePointOfUser = async function (req, res) {
     });
     if (!groupExist) {
       return res
-        .status(404)
+        .status(200)
         .send({ status: false, message: "groupId is not present" });
     }
     let updatedPlayers = groupExist.updatedPlayers;
@@ -1145,7 +1145,7 @@ const updatePointOfUser = async function (req, res) {
     );
 
     if (!isUserExist) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "this user is not present in this group",
       });
@@ -1324,7 +1324,7 @@ const getPlayersOfSnkLadder = async function (req, res) {
       .select({ _id: 1, players: 1 });
 
     if (players.length === 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: " Data not present",
       });
@@ -1352,7 +1352,7 @@ const getAllGroupsOfSnk = async function (req, res) {
       .sort({ createdTime: -1 });
 
     if (groupsData.length === 0) {
-      return res.status(404).send({
+      return res.status(200).send({
         status: false,
         message: "data not found",
       });

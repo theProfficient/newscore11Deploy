@@ -14,6 +14,7 @@ const Decimal = require("decimal.js");
 const profitLossModel = require("../model/profitLossModel");
 const botModel = require("../model/botModel");
 const moment = require("moment");
+const cron = require("node-cron");
 
 //_____crete group as per the admin_______
 
@@ -94,7 +95,25 @@ const createGroup = async function (tableId) {
             isBot: user.isBot,
           };
         });
-
+        const requiredBot = players % 5;
+        let totalBot;
+        if (requiredBot === 1) {
+          totalBot = 4;
+        } else if (requiredBot === 2) {
+          totalBot = 3;
+        } else if (requiredBot === 3) {
+          totalBot = 2;
+        } else if (requiredBot === 4) {
+          totalBot = 1;
+        } else {
+          totalBot = 0;
+        }
+        const updateTournament = await tournamentModel.findOneAndUpdate(
+          { _id: tableId },
+          { $set: { totalBotInTable: totalBot, totalPlayersInTable: players } },
+          { new: true }
+        );
+        console.log(updateTournament, "======================UpdateTournament");
         // Fetch dummy users from the botModel where the type is "normal"
         const dummyUsers = await botModel.find({
           botType: { $in: ["normal", "hard"] },
@@ -217,7 +236,7 @@ async function updateBalls(grpId) {
         { new: true }
       );
       if (!updateTable) {
-        return res.status(404).send({
+        return res.status(200).send({
           status: false,
           message: "table is not updated for isMatchOverForTable to true ",
         });
@@ -259,27 +278,201 @@ async function updateBalls(grpId) {
 
       if (count === 5) {
         // const tournamentData = await tournamentModel.findById({ _id: tableId });
-       const lastDayProfit = await profitLossModel.findOne(
+        const lastDayProfit = await profitLossModel.findOne(
           { gameType: "cricket" },
           { sort: { createdAt: -1 } }
         );
         const currentDate = moment();
         const currentDateFormat = currentDate.format("DD-MM-YYYY");
         // if (tournamentData) {
-          const entryFee = updateTable.entryFee;
-          const prizeAmount = updateTable.prizeAmount;
+        const entryFee = updateTable.entryFee;
+        const prizeAmount = updateTable.prizeAmount;
 
-          const totalEntryFee = entryFee * 5;
+        const totalEntryFee = entryFee * 5;
 
-          profit = totalEntryFee - prizeAmount;
+        profit = totalEntryFee - prizeAmount;
 
-          // Increment fullDayProfit with the calculated profit
+        // Increment fullDayProfit with the calculated profit
+        if (currentDateFormat !== lastDayProfit.currentTime) {
+          const profitData = {
+            gameType: "cricket",
+            groupId: [grpId],
+            currentTime: currentDateFormat,
+            profit: profit,
+            fullDayProfit: profit,
+            fullMonthProfit: lastDayProfit.fullMonthProfit,
+            fullYearProfit: lastDayProfit.fullYearProfit,
+          };
+          const createProfit = await profitLossModel.create(profitData);
+        } else {
+          await profitLossModel.updateOne(
+            {
+              gameType: "cricket",
+              currentTime: currentDateFormat,
+            },
+            {
+              $push: {
+                groupId: grpId,
+              },
+              $inc: {
+                profit: profit,
+                fullDayProfit: profit,
+                fullMonthProfit: profit,
+                fullYearProfit: profit,
+              },
+            },
+            { new: true }
+          );
+        }
+        // Update groupModel
+        const updatedGroup = await groupModel.findByIdAndUpdate(
+          { _id: grpId },
+          {
+            $inc: {
+              profit: profit,
+              totalBotInGrp: totalBotInGrp,
+              totalPlayerInGrp: totalPlayerInGrp,
+            },
+            $set: { updatedPlayers: players },
+            isWicketUpdated: true,
+            isMatchOver: true,
+            ball: 0,
+          },
+          { new: true }
+        );
+
+        console.log("Updated Profit in Database:", updatedGroup.profit);
+        let updateTableProfit = await tournamentModel.findByIdAndUpdate(
+          { _id: tableId },
+          {
+            $inc: {
+              totalProfit: profit,
+            },
+          },
+          { new: true }
+        );
+        console.log(
+          updateTableProfit.totalProfit,
+          "================totalProfit of cricket table"
+        );
+        // }
+      }
+
+      //_______________________loss when not came 5 players and win the player so entry-prize calculate loss ______________________
+
+      if (count < 5) {
+        // const tournamentData = await tournamentModel.findById({ _id: tableId });
+        const lastDayProfit = await profitLossModel
+          .findOne({ gameType: "cricket" })
+          .sort({ createdAt: -1 })
+          .exec();
+
+        const currentDate = moment();
+        const currentDateFormat = currentDate.format("DD-MM-YYYY");
+        console.log("============lastDayProfit", lastDayProfit);
+        console.log(
+          "========lastDayProfit.currentTime",
+          lastDayProfit.currentTime
+        );
+        console.log("==============currentDateFormat", currentDateFormat);
+        console.log(
+          "===========check the equality",
+          currentDateFormat === lastDayProfit.currentTime
+        );
+        // if (tournamentData) {
+        const entryFee = updateTable.entryFee;
+        let totalEntryFee = entryFee * count;
+        console.log(totalEntryFee, "__________totalEntryFee");
+        let winPrizeOfUser = 0;
+
+        for (let i = 0; i < updateWicket.updatedPlayers.length; i++) {
+          if (updateWicket.updatedPlayers[i].isBot === false) {
+            winPrizeOfUser += updateWicket.updatedPlayers[i].prize;
+            console.log(winPrizeOfUser, "_________________winPrizeOfUser");
+          }
+        }
+
+        if (winPrizeOfUser > totalEntryFee) {
+          loss = winPrizeOfUser - totalEntryFee;
+
+          console.log(loss, "____________loss");
+
+          // Update profitLossModel
           if (currentDateFormat !== lastDayProfit.currentTime) {
             const profitData = {
               gameType: "cricket",
               groupId: [grpId],
+              profit: 0,
+              loss: loss,
               currentTime: currentDateFormat,
+              fullDayProfit: profit,
+              fullMonthProfit: lastDayProfit.fullMonthProfit,
+              fullYearProfit: lastDayProfit.fullYearProfit,
+            };
+            const createProfit = await profitLossModel.create(profitData);
+          } else {
+            await profitLossModel.updateOne(
+              {
+                gameType: "cricket", // Assuming you want to filter by game type
+              },
+              {
+                $push: {
+                  groupId: grpId, // Assuming grpId is a single value
+                },
+                $inc: {
+                  loss: loss,
+                  fullDayLoss: fullDayLoss,
+                  fullMonthLoss: fullMonthLoss,
+                  fullYearLoss: fullYearLoss,
+                },
+              },
+              // { upsert: true }
+              { new: true }
+            );
+          }
+          //_______________Update groupModel
+
+          let updatedGroup = await groupModel.findByIdAndUpdate(
+            { _id: grpId },
+            {
+              $inc: {
+                loss: loss,
+                totalBotInGrp: totalBotInGrp,
+                totalPlayerInGrp: totalPlayerInGrp,
+              },
+              $set: { updatedPlayers: players },
+              isWicketUpdated: true,
+              isMatchOver: true,
+              ball: 0,
+            },
+            { new: true }
+          );
+
+          console.log(updatedGroup, "______________updatedGroup");
+
+          console.log("Updated loss in Database:", updatedGroup.loss);
+          let updateTableLoss = await tournamentModel.findByIdAndUpdate(
+            { _id: tableId },
+            {
+              $inc: {
+                totalLoss: loss,
+              },
+            },
+            { new: true }
+          );
+          console.log(
+            updateTableLoss.totalLoss,
+            "================totalLoss of cricket table"
+          );
+        } else {
+          profit = totalEntryFee - winPrizeOfUser;
+          console.log(profit, ":::::::::::::::::profit");
+          if (currentDateFormat !== lastDayProfit.currentTime) {
+            const profitData = {
+              gameType: "cricket",
+              groupId: [grpId],
               profit: profit,
+              currentTime: currentDateFormat,
               fullDayProfit: profit,
               fullMonthProfit: lastDayProfit.fullMonthProfit,
               fullYearProfit: lastDayProfit.fullYearProfit,
@@ -305,7 +498,9 @@ async function updateBalls(grpId) {
               { new: true }
             );
           }
-          // Update groupModel
+
+          //_________________Update groupModel
+
           const updatedGroup = await groupModel.findByIdAndUpdate(
             { _id: grpId },
             {
@@ -322,179 +517,23 @@ async function updateBalls(grpId) {
             { new: true }
           );
 
-          console.log("Updated Profit in Database:", updatedGroup.profit);
+          console.log(updatedGroup, "___________update profit");
+
           let updateTableProfit = await tournamentModel.findByIdAndUpdate(
             { _id: tableId },
-            {$inc:{
-              totalProfit : profit
-            }},
+            {
+              $inc: {
+                totalProfit: profit,
+              },
+            },
             { new: true }
           );
-          console.log(updateTableProfit.totalProfit,"================totalProfit of cricket table");
-        // }
-      }
 
-      //_______________________loss when not came 5 players and win the player so entry-prize calculate loss ______________________
-
-      if (count < 5) {
-        // const tournamentData = await tournamentModel.findById({ _id: tableId });
-        const lastDayProfit = await profitLossModel
-        .findOne({ gameType: "cricket" })
-        .sort({ createdAt: -1 })
-        .exec();
-      
-        const currentDate = moment();
-        const currentDateFormat = currentDate.format("DD-MM-YYYY");
-        console.log("============lastDayProfit", lastDayProfit);
-        console.log("========lastDayProfit.currentTime", lastDayProfit.currentTime);
-        console.log("==============currentDateFormat", currentDateFormat);
-        console.log("===========check the equality",currentDateFormat === lastDayProfit.currentTime);
-        // if (tournamentData) {
-          const entryFee = updateTable.entryFee;
-          let totalEntryFee = entryFee * count;
-          console.log(totalEntryFee, "__________totalEntryFee");
-          let winPrizeOfUser = 0;
-
-          for (let i = 0; i < updateWicket.updatedPlayers.length; i++) {
-            if (updateWicket.updatedPlayers[i].isBot === false) {
-              winPrizeOfUser += updateWicket.updatedPlayers[i].prize;
-              console.log(winPrizeOfUser, "_________________winPrizeOfUser");
-            }
-          }
-
-          if (winPrizeOfUser > totalEntryFee) {
-            loss = winPrizeOfUser - totalEntryFee;
-
-            console.log(loss, "____________loss");
-            
-            // Update profitLossModel
-            if (currentDateFormat !== lastDayProfit.currentTime) {
-              const profitData = {
-                gameType: "cricket",
-                groupId: [grpId],
-                profit: 0,
-                loss:loss,
-                currentTime: currentDateFormat,
-                fullDayProfit: profit,
-                fullMonthProfit: lastDayProfit.fullMonthProfit,
-                fullYearProfit: lastDayProfit.fullYearProfit,
-              };
-              const createProfit = await profitLossModel.create(profitData);
-            } else {
-              await profitLossModel.updateOne(
-                {
-                  gameType: "cricket", // Assuming you want to filter by game type
-                },
-                {
-                  $push: {
-                    groupId: grpId, // Assuming grpId is a single value
-                  },
-                  $inc: {
-                    loss: loss,
-                    fullDayLoss: fullDayLoss,
-                    fullMonthLoss: fullMonthLoss,
-                    fullYearLoss: fullYearLoss,
-                  },
-                },
-                // { upsert: true }
-                { new: true }
-              );
-              
-            }
-            //_______________Update groupModel
-
-            let updatedGroup = await groupModel.findByIdAndUpdate(
-              { _id: grpId },
-              {
-                $inc: {
-                  loss: loss,
-                  totalBotInGrp: totalBotInGrp,
-                  totalPlayerInGrp: totalPlayerInGrp,
-                },
-                $set: { updatedPlayers: players },
-                isWicketUpdated: true,
-                isMatchOver: true,
-                ball: 0,
-              },
-              { new: true }
-            );
-
-            console.log(updatedGroup, "______________updatedGroup");
-
-            console.log("Updated loss in Database:", updatedGroup.loss);
-            let updateTableLoss = await tournamentModel.findByIdAndUpdate(
-              { _id: tableId },
-              {$inc:{
-                totalLoss : loss
-              }},
-              { new: true }
-            );
-            console.log(updateTableLoss.totalLoss,"================totalLoss of cricket table");
-          } else {
-            profit = totalEntryFee - winPrizeOfUser;
-            console.log(profit, ":::::::::::::::::profit");
-            if (currentDateFormat !== lastDayProfit.currentTime) {
-              const profitData = {
-                gameType: "cricket",
-                groupId: [grpId],
-                profit: profit,
-                currentTime: currentDateFormat,
-                fullDayProfit: profit,
-                fullMonthProfit: lastDayProfit.fullMonthProfit,
-                fullYearProfit: lastDayProfit.fullYearProfit,
-              };
-              const createProfit = await profitLossModel.create(profitData);
-            } else {
-             await profitLossModel.updateOne(
-                {
-                  gameType: "cricket",
-                  currentTime: currentDateFormat,
-                },
-                {
-                  $push: {
-                    groupId: grpId,
-                  },
-                  $inc: {
-                    profit: profit,
-                    fullDayProfit: profit,
-                    fullMonthProfit: profit,
-                    fullYearProfit: profit,
-                  },
-                },
-                { new: true }
-              );
-            }
-
-            //_________________Update groupModel
-
-            const updatedGroup = await groupModel.findByIdAndUpdate(
-              { _id: grpId },
-              {
-                $inc: {
-                  profit: profit,
-                  totalBotInGrp: totalBotInGrp,
-                  totalPlayerInGrp: totalPlayerInGrp,
-                },
-                $set: { updatedPlayers: players },
-                isWicketUpdated: true,
-                isMatchOver: true,
-                ball: 0,
-              },
-              { new: true }
-            );
-
-            console.log(updatedGroup, "___________update profit");
-
-            let updateTableProfit = await tournamentModel.findByIdAndUpdate(
-              { _id: tableId },
-              {$inc:{
-                totalProfit : profit
-              }},
-              { new: true }
-            );
-
-            console.log(updateTableProfit.totalProfit,"================totalProfit of cricket table");
-          }
+          console.log(
+            updateTableProfit.totalProfit,
+            "================totalProfit of cricket table"
+          );
+        }
         // }
       }
       //________________________end profit loss________________
@@ -632,29 +671,58 @@ async function updateBalls(grpId) {
   return false;
 }
 
-//_________________________________________update run___________________
-
 function runUpdateBalls(grpId) {
   console.log("call the runUpdateBalls function >>>>>>>>>>>", grpId);
-  if (grpId != undefined) {
+
+  if (grpId !== undefined) {
     let continueRunning = true;
     let executionCount = 0;
 
-    async function updateBallsRecursive() {
+    // Define the cron expression to run every 7 seconds
+    const cronExpression = "*/7 * * * * *";
+
+    // Schedule the updateBallsRecursive function using cron
+    const cronJob = cron.schedule(cronExpression, async () => {
       if (continueRunning) {
         const isMaxCountReached = await updateBalls(grpId);
         if (!isMaxCountReached && executionCount < 8) {
           executionCount++;
-          setTimeout(async () => {
-            //________________update nextBallTime, currentBallTime and  ballSpeed in every 7 seconds
-            updateBallsRecursive();
-          }, 7000); //7sec
+          cronJob.start();
+        } else {
+          cronJob.stop();
+          console.log("Cron job stopped. 1");
         }
+      } else {
+        cronJob.stop();
+        console.log("Cron job stopped.2");
       }
-    }
-    updateBallsRecursive();
+    });
+    cronJob.start();
   }
 }
+//_________________________________________update run___________________
+
+// function runUpdateBalls(grpId) {
+//   console.log("call the runUpdateBalls function >>>>>>>>>>>", grpId);
+//   if (grpId != undefined) {
+//     let continueRunning = true;
+//     let executionCount = 0;
+
+//     async function updateBallsRecursive() {
+//       if (continueRunning) {
+//         const isMaxCountReached = await updateBalls(grpId);
+//         if (!isMaxCountReached && executionCount < 8) {
+//           executionCount++;
+//           setTimeout(async () => {
+//             //________________update nextBallTime, currentBallTime and  ballSpeed in every 7 seconds
+//             updateBallsRecursive();
+//           }, 7000); //7sec
+//         }
+//       }
+//     }
+//     updateBallsRecursive();
+//   }
+// }
 
 //________________________________________________for snakeLadder________________________________________________
 

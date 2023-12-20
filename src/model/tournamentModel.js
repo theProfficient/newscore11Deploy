@@ -56,6 +56,10 @@ const tournamentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    playerWithBot: {
+      type:Number,
+      default:0
+    },
     totalPlayersInTable:{
       type: Number,
       default: 0,
