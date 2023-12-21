@@ -255,12 +255,12 @@ const getAllTables = async function (req, res) {
       }
      
     }
- 
-   data.forEach((item) => {
-    item.players = item.playerWithBot;
-    console.log(item.players, "==========data.players=======", item.playerWithBot);
-  });
 
+    data.forEach((item) => {
+      item.players = item.playerWithBot;
+      console.log(item.players, "==========data.players=======", item.playerWithBot);
+    });
+    
     return res.status(200).send({
       status: true,
       message: "Success",
@@ -590,7 +590,7 @@ const getPlayers = async function (req, res) {
     let players = await tournamentModel
       .find({ endTime: { $gt: new Date() } })
       .sort({ maxTime: 1 })
-      .select({ _id: 1, players: 1 });
+      .select({ _id: 1, players: 1, playerWithBot:1 });
 
     if (players.length === 0) {
       return res.status(200).send({
@@ -598,7 +598,10 @@ const getPlayers = async function (req, res) {
         message: " Data not present",
       });
     }
-
+    players.forEach((item) => {
+    item.players = item.playerWithBot;
+    console.log(item.players, "==========data.players=======", item.playerWithBot);
+  });
     return res.status(200).send({
       status: true,
       message: "Success",

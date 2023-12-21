@@ -671,58 +671,58 @@ async function updateBalls(grpId) {
   return false;
 }
 
-function runUpdateBalls(grpId) {
-  console.log("call the runUpdateBalls function >>>>>>>>>>>", grpId);
-
-  if (grpId !== undefined) {
-    let continueRunning = true;
-    let executionCount = 0;
-
-    // Define the cron expression to run every 7 seconds
-    const cronExpression = "*/7 * * * * *";
-
-    // Schedule the updateBallsRecursive function using cron
-    const cronJob = cron.schedule(cronExpression, async () => {
-      if (continueRunning) {
-        const isMaxCountReached = await updateBalls(grpId);
-        if (!isMaxCountReached && executionCount < 8) {
-          executionCount++;
-          cronJob.start();
-        } else {
-          cronJob.stop();
-          console.log("Cron job stopped. 1");
-        }
-      } else {
-        cronJob.stop();
-        console.log("Cron job stopped.2");
-      }
-    });
-    cronJob.start();
-  }
-}
-//_________________________________________update run___________________
-
 // function runUpdateBalls(grpId) {
 //   console.log("call the runUpdateBalls function >>>>>>>>>>>", grpId);
-//   if (grpId != undefined) {
+
+//   if (grpId !== undefined) {
 //     let continueRunning = true;
 //     let executionCount = 0;
 
-//     async function updateBallsRecursive() {
+//     // Define the cron expression to run every 7 seconds
+//     const cronExpression = "*/7 * * * * *";
+
+//     // Schedule the updateBallsRecursive function using cron
+//     const cronJob = cron.schedule(cronExpression, async () => {
 //       if (continueRunning) {
 //         const isMaxCountReached = await updateBalls(grpId);
 //         if (!isMaxCountReached && executionCount < 8) {
 //           executionCount++;
-//           setTimeout(async () => {
-//             //________________update nextBallTime, currentBallTime and  ballSpeed in every 7 seconds
-//             updateBallsRecursive();
-//           }, 7000); //7sec
+//           cronJob.start();
+//         } else {
+//           cronJob.stop();
+//           console.log("Cron job stopped. 1");
 //         }
+//       } else {
+//         cronJob.stop();
+//         console.log("Cron job stopped.2");
 //       }
-//     }
-//     updateBallsRecursive();
+//     });
+//     cronJob.start();
 //   }
 // }
+//_________________________________________update run___________________
+
+function runUpdateBalls(grpId) {
+  console.log("call the runUpdateBalls function >>>>>>>>>>>", grpId);
+  if (grpId != undefined) {
+    let continueRunning = true;
+    let executionCount = 0;
+
+    async function updateBallsRecursive() {
+      if (continueRunning) {
+        const isMaxCountReached = await updateBalls(grpId);
+        if (!isMaxCountReached && executionCount < 8) {
+          executionCount++;
+          setTimeout(async () => {
+            //________________update nextBallTime, currentBallTime and  ballSpeed in every 7 seconds
+            updateBallsRecursive();
+          }, 7000); //7sec
+        }
+      }
+    }
+    updateBallsRecursive();
+  }
+}
 
 //________________________________________________for snakeLadder________________________________________________
 
