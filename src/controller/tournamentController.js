@@ -600,8 +600,9 @@ const getPlayers = async function (req, res) {
     }
     players.forEach((item) => {
     item.players = item.playerWithBot;
-    console.log(item.players, "==========data.players=======", item.playerWithBot);
+    console.log(item.players, "==========data.players in ma=======", item.playerWithBot);
   });
+  console.log(players,"==============players in mirc api");
     return res.status(200).send({
       status: true,
       message: "Success",

@@ -4,7 +4,6 @@ const snkTournamentModel = require("../model/snkTournamentModel");
 const groupModelForSnakeLadder = require("../model/groupModelForSnakeLadder");
 const snakeLadderModel = require("../model/snakeLadderModel");
 const Decimal = require("decimal.js");
-
 const {
   startMatch,
   createGroupForSnakeLadder,
@@ -12,6 +11,8 @@ const {
 const { log } = require("console");
 const { promises } = require("dns");
 const { resolve } = require("path");
+const totalBotForSnk = 0 ;
+let currentDate = new Date();
 
 //____________________________________create snakeladder tournaments by admin___________
 
@@ -300,7 +301,7 @@ const updateSnakLdrTournaments = async function (req, res) {
     let UserId = req.query.UserId;
     let updateData = req.query;
     let { status } = updateData;
-
+    const currentTime = new Date();
     console.log(req.query.UserId, "______________req.query.UserId");
 
     if (Object.keys(updateData).length == 0) {
@@ -323,6 +324,12 @@ const updateSnakLdrTournaments = async function (req, res) {
         message: " This table is not present ",
       });
     }
+
+    if(currentDate != currentTime){
+      const botCount = await botModel.find().count();
+      totalBot = botCount ;
+    }
+    
     let ExistPlayers = existTable.players;
     let entryFee = existTable.entryFee;
     let maxPlayers = existTable.maxPlayers;
@@ -337,6 +344,14 @@ const updateSnakLdrTournaments = async function (req, res) {
     }
     if (ExistPlayers > maxPlayers - 1) {
       return res.status(200).send({ status: false, message: " Full " });
+    }
+
+    if(existTable.playerWithBot === 0){
+      setTimeout(() => {
+        existTable.playerWithBot = totalBotForSnk ;
+        existTable.save();
+        
+      }, 1*10*1000);
     }
 
     //________________________________find user,s Name _____________________________________
@@ -1321,7 +1336,7 @@ const getPlayersOfSnkLadder = async function (req, res) {
     let players = await snkTournamentModel
       .find({ endTime: { $gt: new Date() } })
       .sort({ maxTime: 1 })
-      .select({ _id: 1, players: 1 });
+      .select({ _id: 1, players: 1, playerWithBot:1 });
 
     if (players.length === 0) {
       return res.status(200).send({
@@ -1329,6 +1344,11 @@ const getPlayersOfSnkLadder = async function (req, res) {
         message: " Data not present",
       });
     }
+
+    players.forEach((item) => {
+      item.players = item.playerWithBot;
+      console.log(item.players, "==========data.players in ma=======", item.playerWithBot);
+    });
 
     return res.status(200).send({
       status: true,

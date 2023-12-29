@@ -13,10 +13,21 @@ const snkTournamentSchema = new mongoose.Schema(
       type: Number,
       trim: true,
     },
-
     prizeAmount: {
       type: Number,
       trim: true,
+    },
+    playerWithBot: {
+      type:Number,
+      default:0
+    },
+    totalPlayersInTable:{
+      type: Number,
+      default: 0,
+    },
+    totalBotInTable:{
+      type: Number,
+      default: 0,
     },
 
     maxPlayers: {

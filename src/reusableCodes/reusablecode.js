@@ -742,6 +742,18 @@ const createGroupForSnakeLadder = async function (tableId) {
             isBot: user.isBot,
           };
         });
+        const requiredBot = players % 2;
+        let totalBot;
+        if (requiredBot === 1) {
+          totalBot = 1;
+        }else {
+          totalBot = 0;
+        }
+        const updateTournament = await tournamentModel.findOneAndUpdate(
+          { _id: tableId },
+          { $set: { totalBotInTable: totalBot, totalPlayersInTable: players } },
+          { new: true }
+        );
         //________________________________import dummyusers and add as per need to complete groups
 
         let dummyUsers = fakeUsers.fakeUsers;

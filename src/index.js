@@ -8,7 +8,7 @@ const route = require("./route/routes");
 const socketIO = require("./socket/socket"); // Import your Socket.io module
 const corsOptions = {
   origin: "*", 
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
 
