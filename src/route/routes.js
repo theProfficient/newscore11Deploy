@@ -35,6 +35,8 @@ Router.get("/login", adminController.adminLoggedin);
 
 Router.get("/getAllTable", adminController.getAllTable);
 
+Router.put("/updateUsersRefAmount", userController.updateUsersRefAmountByAdmin);
+
 //_____________________________________User______________
 
 Router.get("/register", userController.createUsers);
