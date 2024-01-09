@@ -492,8 +492,8 @@ async function updateBalls(grpId) {
             const profitData = {
               gameType: "cricket",
               groupId: [grpId],
-              profit: 0,
-              loss: loss,
+              profit: profit,
+              loss: 0,
               currentTime: currentDateFormat,
               fullDayProfit: profit,
               fullMonthProfit: lastDayProfit.fullMonthProfit,
