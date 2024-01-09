@@ -303,10 +303,7 @@ async function updateBalls(grpId) {
             fullYearProfit: lastDayProfit.fullYearProfit,
           };
           const createProfit = await profitLossModel.create(profitData);
-        }
-
-        // Increment fullDayProfit with the calculated profit
-        if (currentDateFormat !== lastDayProfit.currentTime) {
+        }else if (currentDateFormat !== lastDayProfit.currentTime) {
           const profitData = {
             gameType: "cricket",
             groupId: [grpId],
@@ -422,10 +419,7 @@ async function updateBalls(grpId) {
               fullYearProfit: lastDayProfit.fullYearProfit,
             };
             const createProfit = await profitLossModel.create(profitData);
-          }
-
-          // Update profitLossModel
-          if (currentDateFormat !== lastDayProfit.currentTime) {
+          }else if (currentDateFormat !== lastDayProfit.currentTime) { // Update profitLossModel
             const profitData = {
               gameType: "cricket",
               groupId: [grpId],
