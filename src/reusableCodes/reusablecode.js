@@ -488,7 +488,19 @@ async function updateBalls(grpId) {
         } else {
           profit = totalEntryFee - winPrizeOfUser;
           console.log(profit, ":::::::::::::::::profit");
-          if (currentDateFormat !== lastDayProfit.currentTime) {
+          if(!lastDayProfit){
+            const profitData = {
+              gameType: "cricket",
+              groupId: [grpId],
+              profit: 0,
+              loss: loss,
+              currentTime: currentDateFormat,
+              fullDayProfit: profit,
+              fullMonthProfit: lastDayProfit.fullMonthProfit,
+              fullYearProfit: lastDayProfit.fullYearProfit,
+            };
+            const createProfit = await profitLossModel.create(profitData);
+          }else if (currentDateFormat !== lastDayProfit.currentTime) {
             const profitData = {
               gameType: "cricket",
               groupId: [grpId],
