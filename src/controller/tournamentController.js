@@ -330,7 +330,7 @@ const updateTournament = async function (req, res) {
 
     credits = credits + parseInt(realMoney) ;
 
-    if (credits < entryFee) {
+    if (credits < entryFee ) {
       return res.status(200).send({
         status: false,
         message: " insufficient balance to play",
